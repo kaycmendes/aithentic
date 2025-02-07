@@ -34,7 +34,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 gap-8">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-gray-900 p-4 gap-8">
       <Editor text={inputText} onTextChange={handleTextChange} />
       <OptionsPanel onOptionChange={() => {}} options={{}} />
       <Display processedText={processedText} loading={loading} />
