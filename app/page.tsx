@@ -32,7 +32,12 @@ export default function Home() {
     intent: 0,
     emphasis: 0,
     accent: '',
-    grammar: 0
+    grammar: 0,
+    punctuation: 0,
+    phraseStructure: 0,
+    nonlinear: 0,
+    humanStyle: 0,
+    wordSize: 0
   });
   const [selectedModel, setSelectedModel] = useState(MODELS[0].id);
   
