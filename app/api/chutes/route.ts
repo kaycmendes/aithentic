@@ -3,32 +3,41 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    // Validate environment configuration first
-    if (!process.env.CHUTES_API_BASE_URL || !process.env.CHUTES_API_KEY) {
-      throw new Error('API configuration missing - check server environment variables');
-    }
-
     const body = await request.json();
+    const { model } = body;
 
-    const response = await axios.post(
-      process.env.CHUTES_API_BASE_URL,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.CHUTES_API_KEY}`
-        },
-        // Ensure axios throws on HTTP errors
-        validateStatus: (status) => status >= 200 && status < 300
-      }
-    );
-
-    // Extract the processed text from the external API response.
-    const processedText = response.data.choices[0].message.content;
-
-    return NextResponse.json({ result: processedText });
+    // Check which API to use based on the model
+    if (model.includes('deepseek/deepseek-chat')) {
+      // OpenRouter API call
+      const response = await axios.post(
+        'https://openrouter.ai/api/v1/chat/completions',
+        body,
+        {
+          headers: {
+            'Authorization': `Bearer ${process.env.OPEN_ROUTER_API_KEY}`,
+            'HTTP-Referer': process.env.SITE_URL || 'http://localhost:3000',
+            'X-Title': 'AI-thentic',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      return NextResponse.json({ result: response.data.choices[0].message.content });
+    } else {
+      // Chutes API call
+      const response = await axios.post(
+        process.env.CHUTES_API_BASE_URL!,
+        body,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.CHUTES_API_KEY}`
+          }
+        }
+      );
+      return NextResponse.json({ result: response.data.choices[0].message.content });
+    }
   } catch (error: any) {
-    console.error('API Proxy Error:', error);
+    console.error('API Error:', error.response?.data || error);
     return NextResponse.json(
       { error: error.message || 'Internal Server Error' },
       { status: error.response?.status || 500 }
