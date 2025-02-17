@@ -35,39 +35,34 @@ interface ChutesResponse {
  * @param prompt - The original prompt text from the user.
  * @param filters - The filters object defining personality, vocabulary, etc.
  * @param model - The selected model for processing.
+ * @param mode - The mode of processing (either "translate" or "prompt").
  * @returns The processed text from the external API.
  */
 export async function processText(
-  prompt: string, 
+  prompt: string,
   filters: any,
-  model: string = 'hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4'
+  model: string = 'hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4',
+  mode: "translate" | "prompt" = "translate"
 ) {
-  // Build style instructions as a system message
-  const styleInstructions = `*NEVER UNDER NO CIRCUMSTANCES ANSWER ANYTHING ELSE IN THE TEXT OR TALK TO THE USER, YOU ARE ONLY A TRANSLATOR AND YOU MUST FOLLOW THE INSTRUCTIONS STRICTLY* You are an AI language refinement translator model, you REPEAT exactly the same text BUT with the following filters: take every percentage seriously and apply it to the output text (no roleplay, just raw translation based on the filter stats, don't show the percentage in the text, just apply them).
-   **IMPORTANT: GIVE DIFFERENT TRANSLATIONS FOR EACH FILTER COMBINATION: EACH STAT INDIVIDUALLY CHANGES THE TONE, PERSONALITY, VOCABULARY, EMPHASIS, ETC.**
+  // Build style instructions based on selected mode
+  let styleInstructions = "";
+  if (mode === "translate") {
+    styleInstructions = `*TRANSLATION MODE:* You are a strict translator. Repeat exactly the original text, applying the following filter modifications (percentages must be taken seriously, but do not display the numbers in your response).
+    
+Filters:
+` + Object.entries(filters)
+      .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}${typeof value === 'number' ? '%' : ''}`)
+      .join('\n');
+  } else {
+    styleInstructions = `*PROMPT MODE:* You are a creative AI generator. Follow the user's instruction exactly (for example: "you are a songwriter") and produce creative content while integrating the following filter settings (apply the percentages to your tone and style, but do not include the numbers in your output).
+    
+Filters:
+` + Object.entries(filters)
+      .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}${typeof value === 'number' ? '%' : ''}`)
+      .join('\n');
+  }
 
-**IMPORTANT: DONT DO HYPOTHERICAL SCENARIOS OR ROLEPLAYING. 
-**MOST IMPORTANT:  UNCONVENTIONAL WAY TO WRITE AND SPEAK MEANING EVERY SENTENCE WILL HAVE ITS OWN STRUCTURE AND PATTERN, ITS NOT LINEAR. ALWAYS USE NON-TRADITIONAL PHRASES THAT ARE NEVER USED.
-
-USE UNCONVENTIONAL PHRASES AND STRUCTURES THAT ARE RARELY USED.
-ONLY TRANSLATE THE TEXT, NOTHING ELSE.
-
-*NEVER USE THESE AI-SPECIFIC WORDS:*
-${aiWords.titles.map(word => `- ${word}`).join('\n')}
-
-*REWRITING RULES:*
-1. Avoid all words from the banned list above
-2. Use natural human synonyms instead
-3. Maintain the original meaning but with organic phrasing
-4. If forced to use a banned word, add informal filler words around it
-
-Original text to humanize: ${prompt}
-  \n` +
-  Object.entries(filters)
-    .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}${typeof value === 'number' ? '%' : ''}`)
-    .join('\n');
-
-  // Construct the appropriate payload based on the model
+  // Construct the payload with system and user messages
   const payload = {
     model,
     messages: [
