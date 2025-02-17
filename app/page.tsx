@@ -40,6 +40,7 @@ export default function Home() {
     wordSize: 0
   });
   const [selectedModel, setSelectedModel] = useState(MODELS[0].id);
+  const [operationMode, setOperationMode] = useState<"translate" | "prompt">("translate");
   
   const handleSubmit = async () => {
     setIsProcessing(true);
@@ -50,7 +51,7 @@ export default function Home() {
         return !aiWords.titles.includes(cleanWord);
       }).join(' ');
 
-      const processed = await processText(filteredText, filters, selectedModel);
+      const processed = await processText(filteredText, filters, selectedModel, operationMode);
       setOutputText(processed);
     } catch (error) {
       console.error("Error processing text:", error);
@@ -125,18 +126,29 @@ export default function Home() {
 
           <div className="sticky bottom-0 bg-background border-t p-4 space-y-4">
             <div className="flex gap-2">
-              <Select value={selectedModel} onValueChange={setSelectedModel}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Select model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MODELS.map((model) => (
-                    <SelectItem key={model.id} value={model.id}>
-                      {model.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-col gap-2">
+                <Select value={selectedModel} onValueChange={setSelectedModel}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MODELS.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={operationMode} onValueChange={setOperationMode}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Operation Mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="translate">Translate</SelectItem>
+                    <SelectItem value="prompt">Prompt</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Button 
                 onClick={handleSubmit}
                 className="flex-1 gap-2 hover:shadow-md transition-shadow"
